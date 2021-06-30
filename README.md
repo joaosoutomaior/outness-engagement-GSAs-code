@@ -1,4 +1,9 @@
-# outness-engagement-GSAs-code
- code for research project on outness and school engagement 
+# Code for research project on outness and school engagement 
  
- Hank Sherwood and Joao Sout-Maior (code)
+Project by: Hank Sherwood and Joao Sout-Maior (code author)
+ 
+ # Notes
+ 
+ * Numbered .rmd files contain project results.
+ * "helper_" .R files contain auxiliary functions.
+ * Follow the order of file numbers to reproduce results.
