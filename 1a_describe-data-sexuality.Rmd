@@ -1,0 +1,95 @@
+---
+title: "Sexual minority sample"
+author: "Hank Sherwood and Joao Souto-Maior (code)"
+date: "`r format(Sys.time(), '%B %d %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r include=FALSE, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(knitr)
+opts_chunk$set(fig.align="center", warning=FALSE, fig.pos="H")
+```
+
+# Set up
+
+```{r message=FALSE, warning=FALSE}
+source("helper_heading.R")
+dat <- read_rds("../data/dat_sex.Rdata")
+source("helper_var-groups.R")
+source("helper_plot-var-names.R")
+```
+
+```{r}
+vars_categorical <- dat %>%
+  select("gender minority",
+         "sexual minority",
+         starts_with("GenOut"),
+         starts_with("SexOut"),
+         starts_with("item"),
+         "race non white",
+         "sex female",
+         "parental ed") %>%
+  names()
+
+vars_numerical <- dat %>%
+  select(-all_of(c(vars_categorical))) %>%
+  names()
+```
+
+# Describe sample
+
+## Describe numerical vars
+
+```{r}
+table_vars <- dat %>%
+  select(all_of(vars_numerical),
+         -ID_school,
+         -ID_student)
+
+tab <- summary_of_data(table_vars)
+
+tab <- kbl(tab, booktabs = T, align = "l") %>%
+  footnote(number = c(paste0("Total of ", length(unique(dat$ID_student)),
+                              " students in ", length(unique(dat$ID_school)), " schools."))) 
+tab
+```
+
+## Correlation matrices
+
+```{r }
+dat_numerical <- dat %>%
+  select(all_of(vars_numerical),
+         -starts_with("ID"))
+vars_corr <- cor(dat_numerical, use="complete.obs")
+res1 <- cor.mtest(dat_numerical, use="complete.obs", conf.level = .95)
+corrplot(vars_corr, method = "number", p.mat = res1$p, insig = "pch", sig.level = 0.1, type = "lower", diag = FALSE)
+
+png("../figures/corr-numerical-sex.png")
+corrplot(vars_corr, method = "number", p.mat = res1$p, insig = "pch", sig.level = 0.1, type = "lower", diag = FALSE)
+dev.off()
+```
+
+## Describe categorical vars
+
+```{r}
+dat_item <- dat %>%
+  select(starts_with("item"))
+tab <- summary_cat(dat_item)
+tab
+```
+
+```{r}
+dat_item <- dat %>%
+  select(all_of(vars_categorical),
+         -starts_with("item"),
+         -starts_with("GenOut"),
+         -starts_with("SexOut"))
+
+tab <- summary_cat(dat_item)
+tab
+```

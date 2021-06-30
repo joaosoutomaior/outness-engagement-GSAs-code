@@ -1,0 +1,121 @@
+---
+title: "IRT: sexual minority sample"
+author: "Hank Sherwood and Joao Souto-Maior (code)"
+date: "`r format(Sys.time(), '%B %d %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r include=FALSE, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(knitr)
+opts_chunk$set(fig.align="center", warning=FALSE, fig.pos="H")
+```
+
+# Set up
+
+```{r message=FALSE, warning=FALSE}
+source("helper_heading.R")
+dat <- read_rds("../data/dat_sex.Rdata")
+source("helper_var-groups.R")
+source("helper_plot-var-names.R")
+```
+
+# Item Response Theory
+
+```{r}
+source("helper_code-var-names.R")
+dat_resp_sex <- dat %>%
+  select("SexOut.parents",
+         "SexOut.ext.family", 
+         "SexOut.GSA.peers", 
+         "SexOut.school.peers", 
+         "SexOut.school.adults", 
+         "SexOut.others") 
+```
+
+# Describe
+
+```{r}
+rcor.test(dat_resp_sex, method = "kendall")
+```
+
+# Models 
+
+```{r}
+IRT_model1 = grm(dat_resp_sex, constrained = T, IRT.param = T, na.action = na.exclude)
+margins(IRT_model1)
+```
+
+```{r}
+IRT_model2 = grm(dat_resp_sex, IRT.param = TRUE, na.action = na.exclude)
+margins(IRT_model2)
+```
+
+Compare models.
+
+```{r}
+anova(IRT_model1, IRT_model2)
+```
+
+Model 2 fits better.
+
+## Output
+
+```{r}
+x <- as_tibble(coef(IRT_model2))
+x1 <- data.frame("Variable" = c("SexOut parents",
+                                   "SexOut ext. family",
+                                   "SexOut GSA peers",
+                                   "SexOut school peers", 
+                                   "SexOut school adults",
+                                   "SexOut others"))
+x <- cbind(x1, x)
+x <- x %>%
+  rename(Discrimination = Dscrmn)
+```
+
+```{r results="asis"}
+kbl(x, booktabs = T, align = "l") %>%
+  footnote(number = c("Extremity parameters show the latent score at the borded of item responses. Extrm1, for example, shows the score for which respondents are just as likely to select item 1 (1-Definetely not) and item 2 (2-Might).", "The discrimination parameter determines the rate at which a different item response predicts the latent score. Higher discrimintation parameter means that the measure adds more information to the latent score."),  threeparttable = T)
+```
+
+## Save results
+
+```{r}
+scores_dat <- factor.scores(IRT_model2, resp.patterns = dat_resp_sex)
+outness.about.sexuality <- as_tibble(scores_dat$score.dat$z1)
+dat <- cbind(dat, outness.about.sexuality)
+dat <- dat %>%
+  mutate(outness.about.sexuality = value)
+```
+
+```{r}
+write_rds(dat, "../data/dat_sex_2.Rdata")
+```
+
+## Plot results.
+
+```{r}
+summary(dat$outness.about.sexuality)
+sd(dat$outness.about.sexuality)
+```
+
+```{r}
+plot(IRT_model2, lwd = 2, cex = 0.8,
+     legend = TRUE, cx = "topright",
+     xlab = "Sexuality outness index", cex.main = 1,
+     cex.lab = 1, cex.axis = 1)
+```
+
+* The extremity parameters show the latent trait score at which people have a 50/50 chance of selecting certain responses
+* Item Discrimination determines the rate at which the probability of endorsing a correct item changes given ability levels.
+
+```{r}
+plot(IRT_model2, type = "IIC", lwd = 2, cex = 0.7, legend = TRUE, cx = "topleft",
+     xlab = "Latent trait: level of sexuality outness", cex.main = 1, cex.lab = 1, cex.axis = 1, main = " ")
+```
+

@@ -1,0 +1,244 @@
+---
+title: "Samples of interest"
+author: "Hank Sherwood and Joao Souto-Maior (code)"
+date: "`r format(Sys.time(), '%B %d %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r include=FALSE, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(knitr)
+opts_chunk$set(fig.align="center", warning=FALSE, fig.pos="H")
+
+source("helper_heading.R")
+source("helper_data.R")
+source("helper_plot-var-names.R")
+```
+
+# Gender and sexuality in the data
+
+```{r}
+nrow(dat)
+vars <- dat %>%
+  select("gender minority",
+         "sexual minority")
+summary_cat(vars)
+```
+
+```{r}
+freq_table(dat$"sex female")
+```
+
+```{r}
+table(dat$"gender minority", dat$"sexual minority")
+```
+
+# Sex
+
+Remove those who are not assigned sex either male or female at birth.
+
+```{r}
+dat <- dat %>%
+  filter(dat$"sex female" == 1 | 
+         dat$"sex female" == 2)
+nrow(dat)
+```
+
+```{r}
+dat <- dat %>%
+  mutate("sex female" = 
+           factor(dat$"sex female", 
+                  levels = c(1, 2), 
+                  labels = c( "No", "Yes"),
+                  ordered = TRUE))
+freq_table(dat$`sex female`)
+```
+
+```{r}
+dat_main <- dat
+```
+
+# Gender
+
+Only keep those who with no Nas in the outness questions.
+
+## Describe outness items
+
+```{r }
+dat_sex <- dat %>%
+  filter(dat$"sexual minority" == "Yes") %>%
+  select(-starts_with("GenOut"))
+```
+
+```{r}
+dat_item_sex <- dat_sex %>%
+  select(starts_with("SexOut"))
+
+tab <- summary_cat(dat_item_sex)
+tab
+```
+
+```{r}
+dat_gen <- dat %>%
+  filter(dat$"gender minority" == "Yes") %>%
+  select(-starts_with("SexOut"))
+```
+
+```{r}
+dat_item_gen <- dat_gen %>%
+  select(starts_with("GenOut"))
+
+tab <- summary_cat(dat_item_gen)
+tab
+```
+
+## Filter
+
+### Gender minority data.
+
+```{r}
+nrow(dat_gen)
+dat_gen <- dat_gen %>%
+  drop_na(starts_with("GenOut"), 
+          -contains("siblings"))
+nrow(dat_gen)
+```
+
+```{r}
+dat <- dat_gen
+source("helper_code-var-names.R")
+dat_gen <- dat
+write_rds(dat_gen, "../data/dat_gen.Rdata")
+```
+
+### Sexual minority data.
+
+```{r}
+nrow(dat_sex)
+dat_sex <- dat_sex %>%
+  drop_na(starts_with("SexOut"),
+          -contains("siblings"))
+nrow(dat_sex)
+```
+
+```{r}
+dat <- dat_sex
+source("helper_code-var-names.R")
+dat_sex <- dat
+write_rds(dat_sex, "../data/dat_sex.Rdata")
+```
+
+# Confirmatory factor analyses of variables of interest
+
+Note that we do not have enough observations to complete a CFA in selected composites (some survey item responses have frequency of 0). We have two options: (a) not provide a CFA for these selected items and trust the survey measures by citing previous work; (b) change the item structure so that no survey item response has a frequency of 0. As I see it, option (a) is best since we are able to provide the CFA for the primary variables of interest. 
+
+Main data.
+
+```{r}
+dat <- dat_main %>%
+  select(-starts_with("SexOut"),
+         -starts_with("GenOut"),
+         -`sex female`)
+  
+source("helper_code-var-names.R")
+
+dat_sex <- dat_sex %>%
+  select(ID_student) %>%
+  mutate(sample.sex = 1)
+dat_gen <- dat_gen %>%
+  select(ID_student)%>%
+  mutate(sample.gen = 1)
+
+dat <- left_join(dat, dat_sex, by = c("ID_student" = "ID_student")) 
+dat <- left_join(dat, dat_gen, by = c("ID_student" = "ID_student")) 
+
+dat <- dat %>%
+  filter(sample.gen == 1 | sample.sex == 1)
+```
+
+## Behavioral engagement 
+
+* Not able to get CFA: some survey item responses have frequency of 0.
+
+```{r}
+#cfa_model  <- ' emotional.engagement.check  = ~ item.1.classroom + item.2.classroom + #item.3.classroom + item.4.classroom + item.5.classroom'
+#cfa <- cfa(cfa_model, data = dat) 
+#summary(cfa, fit.measures=TRUE)
+```
+
+## Emotional engagement
+
+```{r}
+cfa_model  <- ' emotional.engagement.check  = ~ item.6.classroom + item.7.classroom + item.8.classroom + item.9.classroom + item.10.classroom'
+cfa <- cfa(cfa_model, data = dat) 
+summary(cfa, fit.measures=TRUE)
+```
+
+## Global worth
+
+```{r}
+cfa_model  <- ' emotional.engagement.check  = ~ item.1.GW + item.2.GW + item.3.GW + item.4.GW + item.5.GW'
+cfa <- cfa(cfa_model, data = dat) 
+summary(cfa, fit.measures=TRUE)
+```
+
+## GSA involvement
+
+* Not able to get CFA: some survey item responses have frequency of 0.
+
+```{r}
+#cfa_model  <- ' emotional.engagement.check  = ~ item.1.involvement + item.2.involvement + item.3.involvement + item.4.involvement + item.5.involvement + item.6.involvement + item.7.involvement'
+#cfa <- cfa(cfa_model, data = dat) 
+#summary(cfa, fit.measures=TRUE)
+```
+
+## Peer sensitivity
+
+* Not able to get CFA: some survey item responses have frequency of 0.
+
+```{r}
+#cfa_model  <- ' emotional.engagement.check  = ~ item.1.PS + item.2.PS + item.3.PS + item.4.PS + item.5.PS + item.6.PS + item.7.PS'
+#cfa <- cfa(cfa_model, data = dat) 
+#summary(cfa, fit.measures=TRUE)
+```
+
+## GSA engagement
+
+* Not able to get CFA: some survey item responses have frequency of 0.
+
+```{r}
+#cfa_model  <- ' emotional.engagement.check  = ~ item.1.engagement + item.2.engagement + item.3.engagement + item.4.engagement + item.5.engagement'
+#cfa <- cfa(cfa_model, data = dat) 
+#summary(cfa, fit.measures=TRUE)
+```
+
+## Victimization
+
+```{r}
+cfa_model  <- ' y  = ~ item.1.victimization + item.2.victimization + item.3.victimization + item.4.victimization + item.5.victimization'
+cfa <- cfa(cfa_model, data = dat) 
+summary(cfa, fit.measures=TRUE)
+```
+
+## Victimization.LGBT
+
+* Not able to get CFA: some survey item responses have frequency of 0.
+
+```{r}
+#cfa_model  <- ' y  = ~ item.1.victimization.LGBT + item.2.victimization.LGBT + item.3.victimization.LGBT + item.4.victimization.LGBT + item.5.victimization.LGBT'
+#cfa <- cfa(cfa_model, data = dat) 
+#summary(cfa, fit.measures=TRUE)
+```
+
+## GSA belonging
+
+```{r}
+cfa_model  <- ' y  = ~ item.1.belonging + item.2.belonging + item.3.belonging + item.4.belonging + item.5.belonging + item.6.belonging + item.7.belonging + item.8.belonging + item.9.belonging + item.10.belonging'
+cfa <- cfa(cfa_model, data = dat) 
+summary(cfa, fit.measures=TRUE)
+```
+

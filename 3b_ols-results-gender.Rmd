@@ -1,0 +1,207 @@
+---
+title: "Results: gender minority sample"
+author: "Hank Sherwood and Joao Souto-Maior (code)"
+date: "`r format(Sys.time(), '%B %d %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r include=FALSE, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(knitr)
+opts_chunk$set(fig.align="center", warning=FALSE, fig.pos="H")
+```
+
+# Set up
+
+```{r message=FALSE, warning=FALSE}
+source("helper_heading.R")
+dat <- read_rds("../data/dat_gen_2.Rdata")
+source("helper_var-groups.R")
+```
+
+# Data
+
+```{r}
+dat <- dat %>%
+  select(-starts_with("item"),
+         -starts_with("GenOut"),
+         -sexual.minority,
+         -gender.minority)
+glimpse(dat)
+```
+
+# Missing data
+
+```{r}
+pct_missing_variable(dat)
+```
+
+## Mutiple imputation
+
+```{r}
+imp <- mice(dat, maxit=0)
+predM <- imp$predictorMatrix
+meth <- imp$method
+```
+
+Define imputation model for given variables.
+
+```{r}
+dummy <- dat %>%
+  select(sex.female,
+         race.non.white) %>%
+  names()
+cat <- dat %>%
+  select(parental.ed) %>%
+  names()
+
+#meth[ordered_cat] <- "polr"
+meth[dummy] <- "logreg"
+meth[cat] <- "polyreg"
+meth
+```
+
+Imputation leading to 5 datasets.
+
+```{r}
+m_imputation <- mice(dat, maxit = 5, 
+                     predictorMatrix = predM, 
+                     method = meth, 
+                     print =  FALSE)
+```
+
+Imputed datasets.
+
+```{r}
+dat1 <- mice::complete(m_imputation, 1)
+dat2 <- mice::complete(m_imputation, 2)
+dat3 <- mice::complete(m_imputation, 3)
+dat4 <- mice::complete(m_imputation, 4)
+dat5 <- mice::complete(m_imputation, 5)
+```
+
+Illustration.
+
+```{r}
+freq_table(dat1$parental.ed)
+freq_table(dat2$parental.ed)
+```
+
+# Check nested structure of data
+
+```{r}
+t(sapply(dat[, c("ID_school", "ID_student")], summary_levels)) 
+```
+
+```{r message=FALSE, warning=F}
+source("helper_check-nested-structure.R")
+check_nested_structure(emotional.engagement, 
+                       outness.about.gender.identity, 
+                       ID_school,
+                       ID_school,
+                       dat1)
+```
+
+School-level correlations do not seem very strong. That said, correlation within groups, even when small, are problematic for traditional OLS models for two main reasons: (1) the independence of errors assumption is unlikely to hold, which bias the standard errors of coefficients and lead to unreliable results concerning the statistical significance of coefficients; (2) if we do not account for an existing within-group correlation, we might introduce an issue of omitted variable bias, which might hinder coefficients themselves to be unreliable.
+
+Below I provide two options to account for the within-school correlation presented in this nested data: (a) robust standard errors in an OLS model (White, 1980); (b) school-specific effects in multilevel regression model. Ideally, option (b) is preferred because it fixes both problems (1) and (2). That said, as I demonstrate below, a multilevel model fails to converge because the structure of the model is not supported by the underlying data. This is likely due to the limit number of observations in many schools in this sample. Given this limitation, I consider solution (b) to minimize the the issue of within-group correlation. 
+
+# Models
+
+```{r message=FALSE, warning=FALSE}
+source("helper_models.R")
+```
+
+## Emotional engagement
+
+Run models.
+
+```{r}
+list = list(dat1, dat2, dat3, dat4, dat5)
+
+m1 <- ols_model1("emotional.engagement", "outness.about.gender.identity", list)
+m2 <- ols_model2("emotional.engagement", "outness.about.gender.identity", list)
+m3 <- ols_model3("emotional.engagement", "outness.about.gender.identity", list)
+
+m_mlm_1 <- ols_model1("emotional.engagement", "outness.about.gender.identity", list)
+m_mlm_2 <- ols_model2("emotional.engagement", "outness.about.gender.identity", list)
+m_mlm_3 <- ols_model3("emotional.engagement", "outness.about.gender.identity", list)
+```
+
+### Pooled results for OLS with robust SEs (pooled across imputed datasets)
+
+```{r}
+r1 <- pool(m1)
+r2 <- pool(m2)
+r3 <- pool(m3)
+
+screenreg(list(r1, r2, r3))
+
+# Omit controls
+screenreg(list(r1, r2, r3),
+          omit.coef = c("race.non.white|sex.female|parental.ed|grade|age$"))
+```
+
+### Pooled results for MLM (does not converge)
+
+```{r}
+r1 <- pool(m_mlm_1)
+r2 <- pool(m_mlm_2)
+r3 <- pool(m_mlm_3)
+
+screenreg(list(r1, r2, r3))
+
+# Omit controls
+screenreg(list(r1, r2, r3),
+          omit.coef = c("race.non.white|sex.female|parental.ed|grade|age$"))
+
+```
+
+## Behavioral engagement
+
+Run models.
+
+```{r}
+list = list(dat1, dat2, dat3, dat4, dat5)
+
+m1 <- ols_model1("behavioral.engagement", "outness.about.gender.identity", list)
+m2 <- ols_model2("behavioral.engagement", "outness.about.gender.identity", list)
+m3 <- ols_model3("behavioral.engagement", "outness.about.gender.identity", list)
+
+m_mlm_1 <- ols_model1("behavioral.engagement", "outness.about.gender.identity", list)
+m_mlm_2 <- ols_model2("behavioral.engagement", "outness.about.gender.identity", list)
+m_mlm_3 <- ols_model3("behavioral.engagement", "outness.about.gender.identity", list)
+```
+
+### Pooled results for OLS with robust SEs (pooled across imputed datasets)
+
+```{r}
+r1 <- pool(m1)
+r2 <- pool(m2)
+r3 <- pool(m3)
+
+screenreg(list(r1, r2, r3))
+
+# Omit controls
+screenreg(list(r1, r2, r3),
+          omit.coef = c("race.non.white|sex.female|parental.ed|grade|age$"))
+```
+
+### Pooled results for MLM (does not converge)
+
+```{r}
+r1 <- pool(m_mlm_1)
+r2 <- pool(m_mlm_2)
+r3 <- pool(m_mlm_3)
+
+screenreg(list(r1, r2, r3))
+
+# Omit controls
+screenreg(list(r1, r2, r3),
+          omit.coef = c("race.non.white|sex.female|parental.ed|grade|age$"))
+
+```
