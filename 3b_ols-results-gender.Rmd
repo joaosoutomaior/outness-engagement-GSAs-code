@@ -102,7 +102,7 @@ source("helper_check-nested-structure.R")
 check_nested_structure(emotional.engagement, 
                        outness.about.gender.identity, 
                        ID_school,
-                       ID_school,
+                       ID_student,
                        dat1)
 ```
 
