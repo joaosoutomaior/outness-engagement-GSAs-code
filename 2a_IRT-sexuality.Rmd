@@ -90,7 +90,11 @@ scores_dat <- factor.scores(IRT_model2, resp.patterns = dat_resp_sex)
 outness.about.sexuality <- as_tibble(scores_dat$score.dat$z1)
 dat <- cbind(dat, outness.about.sexuality)
 dat <- dat %>%
-  mutate(outness.about.sexuality = value)
+  mutate(outness.about.sexuality = value + 4)
+```
+
+```{r}
+summary(dat$outness.about.sexuality)
 ```
 
 ```{r}
