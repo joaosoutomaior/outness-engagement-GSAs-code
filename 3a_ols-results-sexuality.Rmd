@@ -30,7 +30,8 @@ dat <- dat %>%
   select(-starts_with("item"),
          -starts_with("SexOut"),
          -sexual.minority,
-         -gender.minority)
+         -gender.minority) %>%
+  mutate(outness.about.sexuality = outness.about.sexuality + 4)
 glimpse(dat)
 ```
 
@@ -43,6 +44,7 @@ pct_missing_variable(dat)
 ## Mutiple imputation
 
 ```{r}
+set.seed(10)
 imp <- mice(dat, maxit=0)
 predM <- imp$predictorMatrix
 meth <- imp$method

@@ -89,10 +89,8 @@ kbl(x, booktabs = T, align = "l") %>%
 scores_dat <- factor.scores(IRT_model2, resp.patterns = dat_resp_sex)
 outness.about.sexuality <- as_tibble(scores_dat$score.dat$z1)
 dat <- cbind(dat, outness.about.sexuality)
-
-min = abs(min(dat$value))
 dat <- dat %>%
-  mutate(outness.about.sexuality = value + min)
+  mutate(outness.about.sexuality = value)
 ```
 
 ```{r}

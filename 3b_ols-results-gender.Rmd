@@ -29,8 +29,9 @@ source("helper_var-groups.R")
 dat <- dat %>%
   select(-starts_with("item"),
          -starts_with("GenOut"),
-         -sexual.minority,
-         -gender.minority)
+         -sexual.minority, 
+         -gender.minority) %>%
+  mutate(outness.about.gender.identity = outness.about.gender.identity + 4)
 glimpse(dat)
 ```
 
@@ -43,6 +44,7 @@ pct_missing_variable(dat)
 ## Mutiple imputation
 
 ```{r}
+set.seed(10)
 imp <- mice(dat, maxit=0)
 predM <- imp$predictorMatrix
 meth <- imp$method
