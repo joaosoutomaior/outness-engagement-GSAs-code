@@ -140,6 +140,7 @@ m_mlm_3 <- ols_model3("emotional.engagement", "outness.about.sexuality", list)
 r1 <- pool(m1)
 r2 <- pool(m2)
 r3 <- pool(m3)
+r_emotional = r3
 
 screenreg(list(r1, r2, r3))
 
@@ -185,6 +186,7 @@ m_mlm_3 <- ols_model3("behavioral.engagement", "outness.about.sexuality", list)
 r1 <- pool(m1)
 r2 <- pool(m2)
 r3 <- pool(m3)
+r_behavioral = r3
 
 screenreg(list(r1, r2, r3))
 
@@ -207,3 +209,319 @@ screenreg(list(r1, r2, r3),
           omit.coef = c("race.non.white|sex.female|parental.ed|grade|age$"))
 
 ```
+
+## Plot interaction effect (Behavioral engagement)
+
+Note: simulations will be run for a student with variable values which capture average values from the data. For categorical variables, the student is defined by the most frequent category. 
+
+Just one quick check on the reference category of parental background.
+
+```{r}
+freq_table(dat$parental.ed)
+```
+
+Get the correct data.
+
+```{r}
+vars <- c("outness.about.sexuality", 
+          "GSA.engagement",
+          vars_controls,
+          var_mechanisms)
+
+model_dat <- dat1 %>%
+  select(all_of(vars))
+
+#transform factors into numeric to average the data for simulations
+factor_vars <- model_dat %>%
+  select(!is.numeric) %>%
+  names()
+# factor vars in the data
+factor_vars
+
+#convert factor to numeric (make sure we ask for integers)
+model_dat <- model_dat %>%
+  mutate(across(.cols = all_of(c(factor_vars)),
+                .fns = ~as.integer(.)))
+glimpse(model_dat)
+
+# calculate mean of data
+mean_dat1 <- mean_of_data(model_dat)
+
+# plug in the three factor vars with most frequent values in the data
+# check the descriptive stats about the data to see values
+mean_dat1 <- mean_dat1 %>%
+  mutate(race.non.white = 0,
+         sex.female = 1,
+         parental.ed = 1)
+
+###########################################
+# do the same of a second dataset (will be useful later)
+
+# calculate mean of data
+mean_dat2 <- mean_of_data(model_dat)
+
+# plug in the three factor vars with most frequent values in the data
+# check the descriptive stats about the data to see values
+mean_dat2 <- mean_dat2 %>%
+  mutate(race.non.white = 0,
+         sex.female = 1,
+         parental.ed = 1)
+```
+
+```{r}
+# check the distribution before deciding on how many
+# values to estimate
+hist(dat1$outness.about.sexuality)
+hist(dat1$GSA.engagement)
+```
+
+```{r}
+coeffs <- as_tibble(r_behavioral$pooled) %>%
+  select(term, estimate) %>%
+  as_tibble(t(.))
+
+# print coeffs to see the position of coeffs
+coeffs
+```
+
+```{r}
+# simulation for the 25th percentile
+
+# add x and y values to the average data
+# 81 is the number of total rows in the data
+# which is defined by the number of simulated y values we want
+mean_dat1 <- mean_dat1 %>% 
+  slice(rep(1:n(), each = 81)) %>%
+  mutate(outness.about.sexuality = seq(0,8, by = 0.1),
+         GSA.engagement = quantile(dat1$GSA.engagement, probs = c(0.25))) 
+
+mean_dat1 <- mean_dat1 %>%
+  mutate(value = coeffs$estimate[[1]] + #intercept
+           age * coeffs$estimate[[13]] + 
+           global.worth *coeffs$estimate[[14]]+ 
+           grade *coeffs$estimate[[12]]+ 
+           GSA.belonging *coeffs$estimate[[19]]+ 
+           GSA.engagement *coeffs$estimate[[13]]+ 
+           LGBT.victimization *coeffs$estimate[[16]]+ 
+           outness.about.sexuality *coeffs$estimate[[2]]+ 
+           parental.ed *coeffs$estimate[[3]]+ #college degree
+           peer.sensitivity *coeffs$estimate[[18]]+ 
+           race.non.white *coeffs$estimate[[4]]+ 
+           sex.female *coeffs$estimate[[5]]+ 
+           social.support *coeffs$estimate[[15]]+ 
+           victimization *coeffs$estimate[[17]] +
+           outness.about.sexuality*GSA.engagement*coeffs$estimate[[20]])
+
+###############################################
+# simulation for the 75th percentile
+
+mean_dat2 <- mean_dat2 %>% 
+  slice(rep(1:n(), each = 81)) %>%
+  mutate(outness.about.sexuality = seq(0,8, by = 0.1),
+         GSA.engagement = quantile(dat1$GSA.engagement, probs = c(0.75))) 
+
+mean_dat2 <- mean_dat2 %>%
+  mutate(value = coeffs$estimate[[1]] + #intercept
+           age * coeffs$estimate[[13]] + 
+           global.worth *coeffs$estimate[[14]]+ 
+           grade *coeffs$estimate[[12]]+ 
+           GSA.belonging *coeffs$estimate[[19]]+ 
+           GSA.engagement *coeffs$estimate[[13]]+ 
+           LGBT.victimization *coeffs$estimate[[16]]+ 
+           outness.about.sexuality *coeffs$estimate[[2]]+ 
+           parental.ed *coeffs$estimate[[3]]+ #college degree
+           peer.sensitivity *coeffs$estimate[[18]]+ 
+           race.non.white *coeffs$estimate[[4]]+ 
+           sex.female *coeffs$estimate[[5]]+ 
+           social.support *coeffs$estimate[[15]]+ 
+           victimization *coeffs$estimate[[17]] +
+           outness.about.sexuality*GSA.engagement*coeffs$estimate[[20]])
+
+```
+
+```{r}
+p <- 
+  ggplot(mean_dat1,
+         aes(x = outness.about.sexuality, 
+                 y = value)) +
+  geom_point(alpha = 0.8,
+             shape = 19,
+             size = 2,
+             color = "red") +
+  geom_point(data = mean_dat2,
+             aes(x = outness.about.sexuality, 
+                 y = value),
+             alpha = 0.8,
+             shape = 19,
+             size = 2,
+             color = "blue") +
+  ylim(c(2,4)) +
+  labs(x = "Level of outness about sexuality",
+       y = "Behavioral engagement") + 
+  geom_text(mapping = aes(x = 2, y = 2, label = paste("GSA engagement = 25th percentile in the data")),
+            size = 4, 
+            angle = 0,
+            alpha = 0.1,
+            color = "red") +
+  geom_text(mapping = aes(x = 2, y = 2.2, label = paste("GSA engagement = 75th percentile in the data")),
+            size = 4,
+            angle = 0,
+            alpha = 0.1,
+            color = "blue") +
+  theme_classic()
+p
+
+ggsave("figures/behavioral_eng_sex_interaction.png")
+```
+
+## Plot interaction effect (emotional)
+
+
+```{r}
+vars <- c("outness.about.sexuality", 
+          "GSA.engagement",
+          vars_controls,
+          var_mechanisms)
+
+model_dat <- dat1 %>%
+  select(all_of(vars))
+
+#transform factors into numeric to average the data for simulations
+factor_vars <- model_dat %>%
+  select(!is.numeric) %>%
+  names()
+# factor vars in the data
+factor_vars
+
+#convert factor to numeric (make sure we ask for integers)
+model_dat <- model_dat %>%
+  mutate(across(.cols = all_of(c(factor_vars)),
+                .fns = ~as.integer(.)))
+glimpse(model_dat)
+
+# calculate mean of data
+mean_dat1 <- mean_of_data(model_dat)
+
+# plug in the three factor vars with most frequent values in the data
+# check the descriptive stats about the data to see values
+mean_dat1 <- mean_dat1 %>%
+  mutate(race.non.white = 0,
+         sex.female = 1,
+         parental.ed = 1)
+
+###########################################
+# do the same of a second dataset (will be useful later)
+
+# calculate mean of data
+mean_dat2 <- mean_of_data(model_dat)
+
+# plug in the three factor vars with most frequent values in the data
+# check the descriptive stats about the data to see values
+mean_dat2 <- mean_dat2 %>%
+  mutate(race.non.white = 0,
+         sex.female = 1,
+         parental.ed = 1)
+```
+
+```{r}
+coeffs <- as_tibble(r_emotional$pooled) %>%
+  select(term, estimate) %>%
+  as_tibble(t(.))
+
+# print coeffs to see the position of coeffs
+coeffs
+```
+
+```{r}
+# simulation for the 25th percentile
+
+# add x and y values to the average data
+# 81 is the number of total rows in the data
+# which is defined by the number of simulated y values we want
+mean_dat1 <- mean_dat1 %>% 
+  slice(rep(1:n(), each = 81)) %>%
+  mutate(outness.about.sexuality = seq(0,8, by = 0.1),
+         GSA.engagement = quantile(dat1$GSA.engagement, probs = c(0.25))) 
+
+mean_dat1 <- mean_dat1 %>%
+  mutate(value = coeffs$estimate[[1]] + #intercept
+           age * coeffs$estimate[[13]] + 
+           global.worth *coeffs$estimate[[14]]+ 
+           grade *coeffs$estimate[[12]]+ 
+           GSA.belonging *coeffs$estimate[[19]]+ 
+           GSA.engagement *coeffs$estimate[[13]]+ 
+           LGBT.victimization *coeffs$estimate[[16]]+ 
+           outness.about.sexuality *coeffs$estimate[[2]]+ 
+           parental.ed *coeffs$estimate[[3]]+ #college degree
+           peer.sensitivity *coeffs$estimate[[18]]+ 
+           race.non.white *coeffs$estimate[[4]]+ 
+           sex.female *coeffs$estimate[[5]]+ 
+           social.support *coeffs$estimate[[15]]+ 
+           victimization *coeffs$estimate[[17]] +
+           outness.about.sexuality*GSA.engagement*coeffs$estimate[[20]])
+
+###############################################
+# simulation for the 75th percentile
+
+mean_dat2 <- mean_dat2 %>% 
+  slice(rep(1:n(), each = 81)) %>%
+  mutate(outness.about.sexuality = seq(0,8, by = 0.1),
+         GSA.engagement = quantile(dat1$GSA.engagement, probs = c(0.75))) 
+
+mean_dat2 <- mean_dat2 %>%
+  mutate(value = coeffs$estimate[[1]] + #intercept
+           age * coeffs$estimate[[13]] + 
+           global.worth *coeffs$estimate[[14]]+ 
+           grade *coeffs$estimate[[12]]+ 
+           GSA.belonging *coeffs$estimate[[19]]+ 
+           GSA.engagement *coeffs$estimate[[13]]+ 
+           LGBT.victimization *coeffs$estimate[[16]]+ 
+           outness.about.sexuality *coeffs$estimate[[2]]+ 
+           parental.ed *coeffs$estimate[[3]]+ #college degree
+           peer.sensitivity *coeffs$estimate[[18]]+ 
+           race.non.white *coeffs$estimate[[4]]+ 
+           sex.female *coeffs$estimate[[5]]+ 
+           social.support *coeffs$estimate[[15]]+ 
+           victimization *coeffs$estimate[[17]] +
+           outness.about.sexuality*GSA.engagement*coeffs$estimate[[20]])
+
+
+```
+
+```{r}
+p <- 
+  ggplot(mean_dat1,
+         aes(x = outness.about.sexuality, 
+                 y = value)) +
+  geom_point(alpha = 0.8,
+             shape = 19,
+             size = 2,
+             color = "red") +
+  geom_point(data = mean_dat2,
+             aes(x = outness.about.sexuality, 
+                 y = value),
+             alpha = 0.8,
+             shape = 19,
+             size = 2,
+             color = "blue") +
+  ylim(c(2,4)) +
+  labs(x = "Level of outness about sexuality",
+       y = "Emotional engagement") + 
+  geom_text(mapping = aes(x = 2, y = 2, label = paste("GSA engagement = 25th percentile in the data")),
+            size = 4, 
+            angle = 0,
+            alpha = 0.1,
+            color = "red") +
+  geom_text(mapping = aes(x = 2, y = 2.2, label = paste("GSA engagement = 75th percentile in the data")),
+            size = 4,
+            angle = 0,
+            alpha = 0.1,
+            color = "blue") +
+  theme_classic()
+p
+
+ggsave("figures/emotional_eng_sex_interaction.png")
+```
+
+
+

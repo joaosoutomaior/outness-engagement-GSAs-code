@@ -12,6 +12,7 @@ gsa_dat <- read.spss("~/Research data/GSA_BC/GSA_T1Y1_08-04-20_updated.sav",
                      to.data.frame = FALSE,
                      max.value.labels = Inf)
 dat <- as_tibble(gsa_dat)
+glimpse(dat)
 
 ################## Note
 # There are two typos in the original file. 
