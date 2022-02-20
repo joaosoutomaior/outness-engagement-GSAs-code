@@ -1,6 +1,6 @@
 # Code for research project on outness and school engagement 
  
-Project by: Hank Sherwood and Joao Sout-Maior (code author)
+Project by: Hank Sherwood and Joao Souto-Maior (code author)
  
  # Notes
  
