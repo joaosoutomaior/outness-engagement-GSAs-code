@@ -354,15 +354,15 @@ p <-
              shape = 19,
              size = 2,
              color = "blue") +
-  ylim(c(2,4)) +
+  ylim(c(0,2.5)) +
   labs(x = "Level of outness about gender identity",
        y = "Behavioral engagement") + 
-  geom_text(mapping = aes(x = 2, y = 2, label = paste("GSA engagement = 25th percentile in the data")),
+  geom_text(mapping = aes(x = 2, y = 0, label = paste("GSA engagement = 25th percentile in the data")),
             size = 4, 
             angle = 0,
             alpha = 0.1,
             color = "red") +
-  geom_text(mapping = aes(x = 2, y = 2.2, label = paste("GSA engagement = 75th percentile in the data")),
+  geom_text(mapping = aes(x = 2, y = 0.2, label = paste("GSA engagement = 75th percentile in the data")),
             size = 4,
             angle = 0,
             alpha = 0.1,
@@ -500,15 +500,15 @@ p <-
              shape = 19,
              size = 2,
              color = "blue") +
-  ylim(c(2,4)) +
+  ylim(c(0,2.5)) +
   labs(x = "Level of outness about gender identity",
        y = "Emotional engagement") + 
-  geom_text(mapping = aes(x = 2, y = 2, label = paste("GSA engagement = 25th percentile in the data")),
+  geom_text(mapping = aes(x = 2, y = 0, label = paste("GSA engagement = 25th percentile in the data")),
             size = 4, 
             angle = 0,
             alpha = 0.1,
             color = "red") +
-  geom_text(mapping = aes(x = 2, y = 2.2, label = paste("GSA engagement = 75th percentile in the data")),
+  geom_text(mapping = aes(x = 2, y = 0.2, label = paste("GSA engagement = 75th percentile in the data")),
             size = 4,
             angle = 0,
             alpha = 0.1,
