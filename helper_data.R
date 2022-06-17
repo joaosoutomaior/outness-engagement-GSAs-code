@@ -24,17 +24,18 @@ glimpse(dat)
 x <- duplicated(dat$IDT1)
 any(x == TRUE)
 # no duplicates (issued fixed in ID 1809 - transformed to 1810).
-
+library(dplyr)
 ################## select variables of interest
 dat_original <- dat
+
 dat <- dat %>%
   select(school,
          IDT1, 
          BehavEngT1,
          EmotEngT1,
          ################### raw survey responses ################
-         #classengage15, classengage16, classengage17, classengage18, classengage19,
-         #classengage11, classengage12, classengage13, classengage14,
+         classengage15, classengage16, classengage17, classengage18, classengage19,
+         classengage11, classengage12, classengage13, classengage14,
          classengage6, classengage7, classengage8, classengage9, classengage10,
          classengage1, classengage2, classengage3, classengage4 , classengage5,
          globalworth1, globalworth2, globalworth3r, globalworth4r, globalworth5r,
@@ -57,7 +58,9 @@ dat <- dat %>%
          ################### controls ############################
          REMinority, sex, parenteducation, memberyr, grade, age,
          ################### potential mechanisms ################
-         GlobalWorthT1,SocSupT1,LGBVictimT1, VictimT1,PeerSensT1,BelongingT1) 
+         GlobalWorthT1,SocSupT1,LGBVictimT1, VictimT1,PeerSensT1,BelongingT1,
+         nonbinary, genderqueer, genderfluid, agender, genderspecify,
+         gaylesbian, bisexual, questioning, pansexual, asexual, queer, sospecify) 
 
 # rename variables
 dat <- dat %>%
@@ -110,6 +113,15 @@ dat <- dat %>%
          item.8.classroom = classengage8,
          item.9.classroom = classengage9,
          item.10.classroom = classengage10,
+         item.11.classroom = classengage11,
+         item.12.classroom = classengage12,
+         item.13.classroom = classengage13,
+         item.14.classroom = classengage14,
+         item.15.classroom = classengage15,
+         item.16.classroom = classengage16,
+         item.17.classroom = classengage17,
+         item.18.classroom = classengage18,
+         item.19.classroom = classengage19,
          #"item.11" = classengage11,
          #"item.12" = classengage12,
          #"item.13" = classengage13,
@@ -200,92 +212,31 @@ table_vars <- dat %>%
 tab <- summary_of_data(table_vars)
 tab
 
-################## Adjust survey items
-# this need to be done in more detail if we are asked to
-# report the items behind all composite variables.
-
-vars <- dat %>%
-  select(starts_with("item"))
-lapply(vars, summary)
-
-items_1_4 <- dat %>%
-  select(starts_with("item") & (contains("GW") | 
-                                  contains("classroom"))) %>%
-  names()
-
-items_0_4 <- dat %>%
-  select(starts_with("item") & (contains("involvement") | 
-                                  contains("engagement") |
-                                  contains("victimization"))) %>%
-  names()
-
-items_1_5 <- dat %>%
-  select(starts_with("item") & (contains("belonging") | 
-                                  contains("PS"))) %>%
-  names()
-
-# create factors
 dat <- dat %>%
-  mutate(across(.cols = all_of(c(items_1_4)),
-                .fns = ~factor(x = .,
-                               levels = c(1, 2, 3, 4),
-                               labels = c( "1-Not true at all",
-                                           "2-Somewhat false",
-                                           "3-Somewhat true",
-                                           "4-Very true"),
-                               ordered = TRUE))) %>%
-  mutate(across(.cols = all_of(c(items_0_4)),
-                .fns = ~factor(x = .,
-                               levels = c(0, 1, 2, 3, 4),
-                               labels = c( "0-Very low",
-                                           "1-Low",
-                                           "2-Mid",
-                                           "3-High",
-                                           "4-Very high"),
-                               ordered = TRUE))) %>%
-  mutate(across(.cols = all_of(c(items_1_5)),
-                .fns = ~factor(x = .,
-                               levels = c(1, 2, 3, 4, 5),
-                               labels = c( "1-Very low",
-                                           "2-Low",
-                                           "3-Mid",
-                                           "4-High",
-                                           "5-Very high"),
-                               ordered = TRUE))) %>%
   mutate(across(.cols = all_of(c(vars_raw_gen_out,
-                                 vars_raw_sex_out)),
-                .fns = ~factor(x = .,
-                               levels = c(1, 2, 3, 4),
-                               labels = c( "1-Definitely not",
-                                           "2-Might",
-                                           "3-Probably",
-                                           "4-Definitely"),
-                               ordered = TRUE))) %>%
+                               vars_raw_sex_out)),
+              .fns = ~factor(x = .,
+                             levels = c(1, 2, 3, 4),
+                             labels = c( "1-Definitely not",
+                                         "2-Might",
+                                         "3-Probably",
+                                         "4-Definitely"),
+                             ordered = TRUE))) %>%
   mutate(across(.cols = all_of(c("race.non.white",
-                               "gender.minority",
-                               "sexual.minority")),
+                                 "gender.minority",
+                                 "sexual.minority")),
                 .fns = ~factor(x = .,
                                levels = c(0, 1),
                                labels = c( "No",
                                            "Yes"),
                                ordered = TRUE))) %>%
   mutate(parental.ed = factor(x = parental.ed,
-                               levels = c(1, 2, 3, 4, 5, 6, 7),
-                               labels = c("No high school",
-                                          "Some high school",
-                                          "High school degree",
-                                          "Some college",
-                                          "Associate's degree",
-                                          "Bachelor's degree",
-                                          "Advanced/graduate degree"),
-                               ordered = TRUE))
-
-# check
-vars <- dat %>%
-  select(starts_with("item"))
-lapply(vars, summary)
-
-################### var labels (if needed...)
-# e.g.
-# data = expss::apply_labels(dat, parental.ed = "Parental education")
-
+                              levels = c(1, 2, 3, 4, 5, 6, 7),
+                              labels = c("No high school",
+                                         "Some high school",
+                                         "High school degree",
+                                         "Some college",
+                                         "Associate's degree",
+                                         "Bachelor's degree",
+                                         "Advanced/graduate degree"),
+                              ordered = TRUE))

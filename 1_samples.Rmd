@@ -34,18 +34,24 @@ freq_table(dat$"sex female")
 ```
 
 ```{r}
+freq_table(dat$"gender minority")
+```
+
+
+```{r}
+freq_table(dat$`sexual minority`)
+```
+
+```{r}
 table(dat$"gender minority", dat$"sexual minority")
 ```
 
 # Sex
 
-Remove those who are not assigned sex either male or female at birth.
+Note one student was not assigned either male or female at birth.
 
 ```{r}
-dat <- dat %>%
-  filter(dat$"sex female" == 1 | 
-         dat$"sex female" == 2)
-nrow(dat)
+freq_table(dat$`sex female`)
 ```
 
 ```{r}
@@ -58,11 +64,79 @@ dat <- dat %>%
 freq_table(dat$`sex female`)
 ```
 
+Save original data for later.
+
 ```{r}
 dat_main <- dat
 ```
 
-# Gender
+# Adjust item labels
+
+```{r}
+################## Adjust survey items
+# this need to be done in more detail if we are asked to
+# report the items behind all composite variables.
+
+vars <- dat %>%
+  select(starts_with("item"))
+lapply(vars, summary)
+
+items_1_4 <- dat %>%
+  select(starts_with("item") & (contains("GW") | 
+                                  contains("classroom"))) %>%
+  names()
+
+items_0_4 <- dat %>%
+  select(starts_with("item") & (contains("involvement") | 
+                                  contains("engagement") |
+                                  contains("victimization"))) %>%
+  names()
+
+items_1_5 <- dat %>%
+  select(starts_with("item") & (contains("belonging") | 
+                                  contains("PS"))) %>%
+  names()
+
+# create factors
+dat <- dat %>%
+  mutate(across(.cols = all_of(c(items_1_4)),
+                .fns = ~factor(x = .,
+                               levels = c(1, 2, 3, 4),
+                               labels = c( "1-Not true at all",
+                                           "2-Somewhat false",
+                                           "3-Somewhat true",
+                                           "4-Very true"),
+                               ordered = TRUE))) %>%
+  mutate(across(.cols = all_of(c(items_0_4)),
+                .fns = ~factor(x = .,
+                               levels = c(0, 1, 2, 3, 4),
+                               labels = c( "0-Very low",
+                                           "1-Low",
+                                           "2-Mid",
+                                           "3-High",
+                                           "4-Very high"),
+                               ordered = TRUE))) %>%
+  mutate(across(.cols = all_of(c(items_1_5)),
+                .fns = ~factor(x = .,
+                               levels = c(1, 2, 3, 4, 5),
+                               labels = c( "1-Very low",
+                                           "2-Low",
+                                           "3-Mid",
+                                           "4-High",
+                                           "5-Very high"),
+                               ordered = TRUE)))
+  
+# check
+vars <- dat %>%
+  select(starts_with("item"))
+#lapply(vars, summary)
+
+################### var labels (if needed...)
+# e.g.
+# data = expss::apply_labels(dat, parental.ed = "Parental education")
+```
+
+# Gender 
 
 Only keep those who with no Nas in the outness questions.
 
@@ -96,9 +170,9 @@ tab <- summary_cat(dat_item_gen)
 tab
 ```
 
-## Filter
+# Define separate samples
 
-### Gender minority data.
+## Gender minority data (and most frequent categories)
 
 ```{r}
 nrow(dat_gen)
@@ -115,7 +189,20 @@ dat_gen <- dat
 write_rds(dat_gen, "../data/dat_gen.Rdata")
 ```
 
-### Sexual minority data.
+```{r}
+freq_table(dat_gen$sex.female)
+```
+
+```{r}
+freq_table(dat_gen$nonbinary)
+freq_table(dat_gen$genderqueer)
+freq_table(dat_gen$genderfluid)
+freq_table(dat_gen$agender)
+freq_table(dat_gen$genderspecify)
+```
+
+## Sexual minority data (and most frequent categories)
+
 
 ```{r}
 nrow(dat_sex)
@@ -130,6 +217,20 @@ dat <- dat_sex
 source("helper_code-var-names.R")
 dat_sex <- dat
 write_rds(dat_sex, "../data/dat_sex.Rdata")
+```
+
+```{r}
+freq_table(dat_sex$sex.female)
+```
+
+```{r}
+freq_table(dat_sex$gaylesbian)
+freq_table(dat_sex$bisexual)
+freq_table(dat_sex$questioning)
+freq_table(dat_sex$pansexual)
+freq_table(dat_sex$asexual)
+freq_table(dat_sex$queer)
+freq_table(dat_sex$sospecify)
 ```
 
 # Confirmatory factor analyses of variables of interest
@@ -160,85 +261,192 @@ dat <- dat %>%
   filter(sample.gen == 1 | sample.sex == 1)
 ```
 
-## Behavioral engagement 
-
-* Not able to get CFA: some survey item responses have frequency of 0.
-
 ```{r}
-#cfa_model  <- ' emotional.engagement.check  = ~ item.1.classroom + item.2.classroom + #item.3.classroom + item.4.classroom + item.5.classroom'
+#cfa_model  <- ' emotional.engagement.check  = ~ item.1.classroom + #item.2.classroom + #item.3.classroom + item.4.classroom + item.5.classroom'
 #cfa <- cfa(cfa_model, data = dat) 
 #summary(cfa, fit.measures=TRUE)
+```
+
+## Behavioral engagement 
+
+```{r}
+factor <- dat %>%
+  select(item.1.classroom,
+         item.2.classroom,
+         item.3.classroom,
+         item.4.classroom,
+         item.5.classroom) %>%
+  as.data.frame()
+
+a = psych::alpha(factor)
+a = a[[1]]
+a$raw_alpha
 ```
 
 ## Emotional engagement
 
 ```{r}
-cfa_model  <- ' emotional.engagement.check  = ~ item.6.classroom + item.7.classroom + item.8.classroom + item.9.classroom + item.10.classroom'
-cfa <- cfa(cfa_model, data = dat) 
-summary(cfa, fit.measures=TRUE)
+factor <- dat %>%
+  select(item.6.classroom,
+         item.7.classroom,
+         item.8.classroom,
+         item.9.classroom,
+         item.10.classroom) %>%
+  as.data.frame()
+
+a = psych::alpha(factor)
+a = a[[1]]
+a$raw_alpha
+```
+## Behavioral disafection
+
+```{r}
+factor <- dat %>%
+  select(item.11.classroom,
+         item.12.classroom,
+         item.13.classroom,
+         item.14.classroom) %>%
+  as.data.frame()
+
+a = psych::alpha(factor)
+a = a[[1]]
+a$raw_alpha
+```
+
+## Emotional disafection
+
+```{r}
+factor <- dat %>%
+  select(item.15.classroom,
+         item.16.classroom,
+         item.17.classroom,
+         item.18.classroom,
+         item.19.classroom) %>%
+  as.data.frame()
+
+a = psych::alpha(factor)
+a = a[[1]]
+a$raw_alpha
 ```
 
 ## Global worth
 
 ```{r}
-cfa_model  <- ' emotional.engagement.check  = ~ item.1.GW + item.2.GW + item.3.GW + item.4.GW + item.5.GW'
-cfa <- cfa(cfa_model, data = dat) 
-summary(cfa, fit.measures=TRUE)
+factor <- dat %>%
+  select(item.1.GW,
+         item.2.GW,
+         item.3.GW,
+         item.4.GW,
+         item.5.GW) %>%
+  as.data.frame()
+
+a = psych::alpha(factor)
+a = a[[1]]
+a$raw_alpha
 ```
 
 ## GSA involvement
 
-* Not able to get CFA: some survey item responses have frequency of 0.
-
 ```{r}
-#cfa_model  <- ' emotional.engagement.check  = ~ item.1.involvement + item.2.involvement + item.3.involvement + item.4.involvement + item.5.involvement + item.6.involvement + item.7.involvement'
-#cfa <- cfa(cfa_model, data = dat) 
-#summary(cfa, fit.measures=TRUE)
+factor <- dat %>%
+  select(item.1.involvement,
+         item.2.involvement,
+         item.3.involvement,
+         item.4.involvement,
+         item.5.involvement,
+         item.6.involvement,
+         item.7.involvement) %>%
+  as.data.frame()
+
+a = psych::alpha(factor)
+a = a[[1]]
+a$raw_alpha
 ```
 
 ## Peer sensitivity
 
-* Not able to get CFA: some survey item responses have frequency of 0.
-
 ```{r}
-#cfa_model  <- ' emotional.engagement.check  = ~ item.1.PS + item.2.PS + item.3.PS + item.4.PS + item.5.PS + item.6.PS + item.7.PS'
-#cfa <- cfa(cfa_model, data = dat) 
-#summary(cfa, fit.measures=TRUE)
+factor <- dat %>%
+  select(item.1.PS,
+         item.2.PS,
+         item.3.PS,
+         item.4.PS,
+         item.5.PS,
+         item.6.PS,
+         item.7.PS) %>%
+  as.data.frame()
+
+a = psych::alpha(factor)
+a = a[[1]]
+a$raw_alpha
 ```
 
 ## GSA engagement
 
-* Not able to get CFA: some survey item responses have frequency of 0.
-
 ```{r}
-#cfa_model  <- ' emotional.engagement.check  = ~ item.1.engagement + item.2.engagement + item.3.engagement + item.4.engagement + item.5.engagement'
-#cfa <- cfa(cfa_model, data = dat) 
-#summary(cfa, fit.measures=TRUE)
+factor <- dat %>%
+  select(item.1.engagement,
+         item.2.engagement,
+         item.3.engagement,
+         item.4.engagement,
+         item.5.engagement) %>%
+  as.data.frame()
+
+a = psych::alpha(factor)
+a = a[[1]]
+a$raw_alpha
 ```
 
 ## Victimization
 
 ```{r}
-cfa_model  <- ' y  = ~ item.1.victimization + item.2.victimization + item.3.victimization + item.4.victimization + item.5.victimization'
-cfa <- cfa(cfa_model, data = dat) 
-summary(cfa, fit.measures=TRUE)
+factor <- dat %>%
+  select(item.1.victimization,
+         item.2.victimization,
+         item.3.victimization,
+         item.4.victimization,
+         item.5.victimization ) %>%
+  as.data.frame()
+
+a = psych::alpha(factor)
+a = a[[1]]
+a$raw_alpha
 ```
 
 ## Victimization.LGBT
 
-* Not able to get CFA: some survey item responses have frequency of 0.
-
 ```{r}
-#cfa_model  <- ' y  = ~ item.1.victimization.LGBT + item.2.victimization.LGBT + item.3.victimization.LGBT + item.4.victimization.LGBT + item.5.victimization.LGBT'
-#cfa <- cfa(cfa_model, data = dat) 
-#summary(cfa, fit.measures=TRUE)
+factor <- dat %>%
+  select(item.1.victimization.LGBT,
+         item.2.victimization.LGBT,
+         item.3.victimization.LGBT,
+         item.4.victimization.LGBT,
+         item.5.victimization.LGBT) %>%
+  as.data.frame()
+
+a = psych::alpha(factor)
+a = a[[1]]
+a$raw_alpha
 ```
 
 ## GSA belonging
 
 ```{r}
-cfa_model  <- ' y  = ~ item.1.belonging + item.2.belonging + item.3.belonging + item.4.belonging + item.5.belonging + item.6.belonging + item.7.belonging + item.8.belonging + item.9.belonging + item.10.belonging'
-cfa <- cfa(cfa_model, data = dat) 
-summary(cfa, fit.measures=TRUE)
+factor <- dat %>%
+  select(item.1.belonging,
+         item.2.belonging,
+         item.3.belonging,
+         item.4.belonging,
+         item.5.belonging,
+         item.6.belonging,
+         item.7.belonging,
+         item.8.belonging,
+         item.9.belonging,
+         item.10.belonging) %>%
+  as.data.frame()
+
+a = psych::alpha(factor)
+a = a[[1]]
+a$raw_alpha
 ```
 

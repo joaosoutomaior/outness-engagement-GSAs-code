@@ -371,7 +371,7 @@ p <-
   theme_classic()
 p
 
-ggsave("figures/behavioral_eng_sex_interaction.png")
+ggsave("figures/behavioral_eng_sex_interaction.svg")
 ```
 
 ## Plot interaction effect (emotional)
@@ -520,7 +520,7 @@ p <-
   theme_classic()
 p
 
-ggsave("figures/emotional_eng_sex_interaction.png")
+ggsave("figures/emotional_eng_sex_interaction.svg")
 ```
 
 
