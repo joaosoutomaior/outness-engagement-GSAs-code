@@ -233,9 +233,7 @@ freq_table(dat_sex$queer)
 freq_table(dat_sex$sospecify)
 ```
 
-# Confirmatory factor analyses of variables of interest
-
-Note that we do not have enough observations to complete a CFA in selected composites (some survey item responses have frequency of 0). We have two options: (a) not provide a CFA for these selected items and trust the survey measures by citing previous work; (b) change the item structure so that no survey item response has a frequency of 0. As I see it, option (a) is best since we are able to provide the CFA for the primary variables of interest. 
+# Cronbach alpha measures for selected variables
 
 Main data.
 
